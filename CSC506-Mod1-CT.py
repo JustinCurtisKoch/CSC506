@@ -30,4 +30,4 @@ result = linear_search(product_names, target)
 if result != -1:
     print("Product name", target, "found at index", result)
 else:
-    print("Product name", target, "not found.")
+    print("Product name", target, "not found")
