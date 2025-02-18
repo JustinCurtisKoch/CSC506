@@ -1,13 +1,16 @@
+# CSC505 Module 4 Portfolio Milestone
+# Algorithm Implementation and Testing.
+
+# Importing necessary libraries
 import yfinance as yf
 import numpy as np
 from dtaidistance import dtw
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 # Fetching historical stock price data
 ticker_1 = yf.Ticker("F")
-ticker_2 = yf.Ticker("AAPL")
+ticker_2 = yf.Ticker("GM")
 
 # Get data for the last year
 data_1 = ticker_1.history(period="1y")
@@ -28,10 +31,10 @@ series_2 = series_2[:min_length]
 
 # Calculate DTW distance
 distance = dtw.distance(series_1, series_2)
-print(f"DTW distance between TSLA and AMZN: {distance}")
+print(f"DTW distance: {distance}")
 
-# --- MDTW Implementation ---
-# Downsample the series (taking every second element for example)
+# MDTW Implementation
+# Downsample the series (taking every second element)
 downsampled_1 = series_1[::2]
 downsampled_2 = series_2[::2]
 
@@ -39,7 +42,7 @@ downsampled_2 = series_2[::2]
 mdtw_distance = dtw.distance(downsampled_1, downsampled_2)
 print(f"MDTW distance: {mdtw_distance:.2f}")
 
-# --- CDTW Implementation ---
+# CDTW Implementation
 # Define window size for CDTW
 window_size = 10
 
@@ -49,9 +52,9 @@ print(f"CDTW distance: {cdtw_distance:.2f}")
 
 # Visualization
 plt.figure(figsize=(10, 6))
-plt.plot(data_1.index[:min_length], series_1, label="TSLA", color="blue")
-plt.plot(data_2.index[:min_length], series_2, label="AMZN", color="green")
-plt.title("Stock Price Comparison: TSLA vs AMZN")
+plt.plot(data_1.index[:min_length], series_1, label="F", color="blue")
+plt.plot(data_2.index[:min_length], series_2, label="GM", color="green")
+plt.title("Stock Price Comparison: F vs GM")
 plt.xlabel("Date")
 plt.ylabel("Closing Price (USD)")
 plt.legend()
