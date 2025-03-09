@@ -5,7 +5,36 @@ from dtaidistance import dtw
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def fetch_stock_data(ticker_symbol, period="1y"):
+
+def get_user_input():
+    """Prompt the user separately for two stock symbols and select a time period."""
+    while True:
+        stock_1 = input("Enter the first stock symbol: ").strip().upper()
+        if stock_1:
+            break
+        print("Invalid input. Please enter a valid stock symbol.")
+
+    while True:
+        stock_2 = input("Enter the second stock symbol: ").strip().upper()
+        if stock_2 and stock_2 != stock_1:
+            break
+        print("Invalid input. Please enter a different valid stock symbol.")
+
+    time_options = {"1": "6mo", "2": "1y", "3": "2y"}
+    
+    while True:
+        print("\nSelect the time period:")
+        print("1. 6 months")
+        print("2. 1 year")
+        print("3. 2 years")
+        time_choice = input("Enter the number corresponding to your choice: ").strip()
+        
+        if time_choice in time_options:
+            return stock_1, stock_2, time_options[time_choice]
+        
+        print("Invalid choice. Please enter 1, 2, or 3.")
+
+def fetch_stock_data(ticker_symbol, period):
     """Fetch historical stock data and return the closing price series."""
     try:
         ticker = yf.Ticker(ticker_symbol)
@@ -17,18 +46,27 @@ def fetch_stock_data(ticker_symbol, period="1y"):
         print(f"Error fetching data for {ticker_symbol}: {e}")
         return None
 
-def compute_dtw(series_1, series_2, method="DTW", window=None):
-    """Compute DTW distance between two time series."""
+def compute_dtw(series_1, series_2, method="DTW", window=None, downsample_factor=2):
+    """Compute DTW distance with optional downsampling or constraints."""
     try:
         if method == "DTW":
             return dtw.distance(series_1, series_2)
-        elif method == "MDTW":  # Downsampled DTW
-            return dtw.distance(series_1[::2], series_2[::2])
-        elif method == "CDTW":  # Constrained DTW
-            return dtw.distance(series_1, series_2, window=window)
+        
+        elif method == "MDTW":  
+            # Adaptive downsampling using a moving average
+            downsampled_1 = pd.Series(series_1).rolling(window=downsample_factor).mean().dropna().values
+            downsampled_2 = pd.Series(series_2).rolling(window=downsample_factor).mean().dropna().values
+            return dtw.distance(downsampled_1, downsampled_2)
+        
+        elif method == "CDTW":  
+            # Dynamic window selection: 10% of series length or user-defined
+            adaptive_window = max(5, int(len(series_1) * 0.1)) if window is None else window
+            return dtw.distance(series_1, series_2, window=adaptive_window)
+    
     except Exception as e:
         print(f"Error computing {method} distance: {e}")
         return None
+
 
 def plot_stock_data(dates, series_1, series_2, label_1, label_2):
     """Plot stock prices of two companies."""
@@ -41,9 +79,12 @@ def plot_stock_data(dates, series_1, series_2, label_1, label_2):
     plt.legend()
     plt.show()
 
-# Fetch data for Ford (F) and General Motors (GM)
-series_1 = fetch_stock_data("F")
-series_2 = fetch_stock_data("GM")
+# Get user input
+stock_1, stock_2, period = get_user_input()
+
+# Fetch data for user-selected stocks
+series_1 = fetch_stock_data(stock_1, period)
+series_2 = fetch_stock_data(stock_2, period)
 
 if series_1 is not None and series_2 is not None:
     # Ensure both series have equal length
@@ -56,10 +97,11 @@ if series_1 is not None and series_2 is not None:
     cdtw_dist = compute_dtw(series_1, series_2, method="CDTW", window=10)
 
     # Print results
+    print(f"\nComparing {stock_1} and {stock_2} over {period}:")
     print(f"DTW Distance: {dtw_dist:.2f}")
     print(f"MDTW Distance (Downsampled): {mdtw_dist:.2f}")
     print(f"CDTW Distance (Constrained, window=10): {cdtw_dist:.2f}")
 
     # Visualization
     dates = pd.date_range(end=pd.Timestamp.today(), periods=min_length)
-    plot_stock_data(dates, series_1, series_2, label_1="F", label_2="GM")
+    plot_stock_data(dates, series_1, series_2, label_1=stock_1, label_2=stock_2)
