@@ -66,6 +66,17 @@ def compute_dtw(series_1, series_2, method="DTW", window=None, downsample_factor
     except Exception as e:
         print(f"Error computing {method} distance: {e}")
         return None
+    
+def compute_normalized_dtw(series_1, series_2):
+    """Compute normalized DTW distance between two time series."""
+    try:
+        normalized_dtw = compute_dtw(series_1, series_2)
+        if normalized_dtw is None:
+            return None
+        return normalized_dtw / len(series_1)  # Normalize by series length
+    except Exception as e:
+        print(f"Error computing normalized DTW: {e}")
+        return None
 
 
 def plot_stock_data(dates, series_1, series_2, label_1, label_2):
@@ -94,13 +105,17 @@ if series_1 is not None and series_2 is not None:
     # Compute DTW distances
     dtw_dist = compute_dtw(series_1, series_2, method="DTW")
     mdtw_dist = compute_dtw(series_1, series_2, method="MDTW")
-    cdtw_dist = compute_dtw(series_1, series_2, method="CDTW", window=10)
+    cdtw_dist = compute_dtw(series_1, series_2, method="CDTW")
+
+    # Compute normalized DTW distance
+    normalized_dtw = compute_normalized_dtw(series_1, series_2)
 
     # Print results
     print(f"\nComparing {stock_1} and {stock_2} over {period}:")
     print(f"DTW Distance: {dtw_dist:.2f}")
     print(f"MDTW Distance (Downsampled): {mdtw_dist:.2f}")
-    print(f"CDTW Distance (Constrained, window=10): {cdtw_dist:.2f}")
+    print(f"CDTW Distance (Constrained): {cdtw_dist:.2f}")
+    print(f"Normalized DTW Distance: {normalized_dtw:.4f}")
 
     # Visualization
     dates = pd.date_range(end=pd.Timestamp.today(), periods=min_length)
